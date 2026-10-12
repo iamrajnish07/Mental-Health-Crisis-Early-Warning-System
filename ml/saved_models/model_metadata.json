@@ -1,0 +1,30 @@
+{
+  "model_type": "RandomForestClassifier with StandardScaler",
+  "version": "1.0.0-synthetic-trained",
+  "features": [
+    "sleep_hours",
+    "sleep_quality",
+    "activity_level",
+    "mood_score",
+    "social_engagement",
+    "sleep_deviation",
+    "activity_deviation",
+    "mood_deviation"
+  ],
+  "n_samples": 1200,
+  "random_forest": {
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "f1_score": 1.0,
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "logistic_regression": {
+    "roc_auc": 1.0,
+    "pr_auc": 1.0,
+    "f1_score": 1.0,
+    "precision": 1.0,
+    "recall": 1.0
+  },
+  "disclaimer": "Models trained on synthetic simulated data to demonstrate early warning technical pipeline. Not intended for clinical diagnosis."
+}

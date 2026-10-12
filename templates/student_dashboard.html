@@ -1,0 +1,347 @@
+{% extends "base.html" %}
+
+{% block title %}Student Dashboard - MindCare Campus{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <h2 class="fw-bold mb-1">Welcome back, {{ user.full_name }}</h2>
+      <div class="text-muted small">
+        <i class="bi bi-mortarboard-fill me-1"></i> {{ user.department }} &bull; {{ user.academic_year }} &bull; <span class="badge bg-secondary-subtle text-secondary-emphasis">ID: {{ user.user_ref }}</span>
+      </div>
+    </div>
+    <div class="d-flex gap-2">
+      <a href="/student/checkin" class="btn btn-primary-custom shadow-sm">
+        <i class="bi bi-pencil-square me-1"></i> Daily Check-in
+      </a>
+      <a href="/student/consent" class="btn btn-outline-secondary">
+        <i class="bi bi-shield-lock me-1"></i> Privacy Settings
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- Notification Messages -->
+{% if request.query_params.get('submitted') %}
+  <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert">
+    <i class="bi bi-check-circle-fill fs-5"></i>
+    <div>
+      <strong>Check-in recorded!</strong> Thank you for taking a moment to reflect on your daily wellbeing. Your personal baseline has been updated.
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+{% if request.query_params.get('deleted') %}
+  <div class="alert alert-info alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert">
+    <i class="bi bi-info-circle-fill fs-5"></i>
+    <div>
+      <strong>Privacy Request Executed:</strong> All historical check-in records have been permanently cleared from your account.
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<!-- Top Widgets Row -->
+<div class="row g-3 mb-4">
+  <!-- Today's Status -->
+  <div class="col-md-4">
+    <div class="stat-widget stat-primary h-100">
+      <div class="stat-label">Today's Check-in</div>
+      {% if today_checkin %}
+        <div class="d-flex align-items-center gap-2 mt-2">
+          <span class="badge-status badge-status-stable fs-6">
+            <i class="bi bi-check2-circle"></i> Completed
+          </span>
+          <span class="text-muted small">{{ today_checkin.sleep_hours }} hrs sleep</span>
+        </div>
+      {% else %}
+        <div class="d-flex align-items-center gap-2 mt-2">
+          <span class="badge-status badge-status-preliminary fs-6">
+            <i class="bi bi-clock"></i> Pending Today
+          </span>
+        </div>
+        <div class="mt-2">
+          <a href="/student/checkin" class="btn btn-sm btn-outline-primary rounded-pill">Complete in 1 min &rarr;</a>
+        </div>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Personal Baseline -->
+  <div class="col-md-4">
+    <div class="stat-widget stat-success h-100">
+      <div class="stat-label">Personal Baseline</div>
+      <div class="d-flex align-items-baseline gap-3 mt-1">
+        <div>
+          <div class="fs-4 fw-bold">{{ baseline.avg_sleep_hours if baseline else 7.5 }}h</div>
+          <div class="small text-muted">Usual Sleep</div>
+        </div>
+        <div class="border-start ps-3">
+          <div class="fs-4 fw-bold">{{ baseline.avg_activity_level if baseline else 6.5 }}/10</div>
+          <div class="small text-muted">Usual Activity</div>
+        </div>
+        <div class="border-start ps-3">
+          <div class="fs-4 fw-bold">{{ baseline.observation_count if baseline else 0 }}</div>
+          <div class="small text-muted">Recorded Days</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Early Warning Indicator Card -->
+  <div class="col-md-4">
+    <div class="stat-widget {% if latest_assessment and latest_assessment.indicator_status == 'Elevated Concern' %}stat-danger{% elif latest_assessment and latest_assessment.indicator_status == 'Needs Review' %}stat-warning{% else %}stat-success{% endif %} h-100">
+      <div class="stat-label">Wellbeing Signal</div>
+      <div class="mt-2">
+        {% if latest_assessment %}
+          {% if latest_assessment.indicator_status == 'Stable' %}
+            <span class="badge-status badge-status-stable fs-6"><i class="bi bi-check-circle-fill"></i> Habits Stable</span>
+          {% elif latest_assessment.indicator_status == 'Preliminary' %}
+            <span class="badge-status badge-status-preliminary fs-6"><i class="bi bi-info-circle-fill"></i> Preliminary Baseline</span>
+          {% elif latest_assessment.indicator_status == 'Needs Review' %}
+            <span class="badge-status badge-status-review fs-6"><i class="bi bi-exclamation-circle-fill"></i> Habit Shift Detected</span>
+          {% else %}
+            <span class="badge-status badge-status-elevated fs-6"><i class="bi bi-exclamation-triangle-fill"></i> Support Recommended</span>
+          {% endif %}
+          <div class="small text-muted mt-2">
+            Model: {{ latest_assessment.model_version }} &bull; Conf: {{ (latest_assessment.model_confidence * 100)|round(1) }}%
+          </div>
+        {% else %}
+          <span class="badge-status badge-status-preliminary fs-6">Awaiting First Check-in</span>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Charts Row -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card card-custom h-100">
+      <div class="card-header card-header-clean d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-moon-stars-fill text-primary me-2"></i>Sleep Duration Trend (Hours)</h6>
+        <span class="text-muted small">Baseline: {{ baseline.avg_sleep_hours if baseline else 7.5 }} hrs</span>
+      </div>
+      <div class="card-body p-3">
+        <div style="height: 250px;">
+          <canvas id="sleepChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card card-custom h-100">
+      <div class="card-header card-header-clean d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-activity text-info me-2"></i>Activity & Mood Habits (1-10)</h6>
+        <span class="text-muted small">Self-reported</span>
+      </div>
+      <div class="card-body p-3">
+        <div style="height: 250px;">
+          <canvas id="habitsChart"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- History & Support Resources Row -->
+<div class="row g-4">
+  <!-- Recent Check-ins Table -->
+  <div class="col-lg-8">
+    <div class="card card-custom">
+      <div class="card-header card-header-clean d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-clock-history me-2"></i>Recent Check-in History</h6>
+        <span class="badge bg-light text-dark border">{{ checkins|length }} entries</span>
+      </div>
+      <div class="table-responsive">
+        <table class="table table-custom table-hover">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Sleep</th>
+              <th>Sleep Qual</th>
+              <th>Activity</th>
+              <th>Mood</th>
+              <th>Support Req</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for c in checkins %}
+              <tr>
+                <td class="fw-bold small">{{ c.checkin_date.strftime('%Y-%m-%d') }}</td>
+                <td>{{ c.sleep_hours }} hrs</td>
+                <td>{{ c.sleep_quality }}/10</td>
+                <td>{{ c.activity_level }}/10</td>
+                <td>{{ c.mood_score if c.mood_score else '—' }}</td>
+                <td>
+                  {% if c.requested_counsellor %}
+                    <span class="badge bg-danger">Requested</span>
+                  {% else %}
+                    <span class="text-muted small">No</span>
+                  {% endif %}
+                </td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="6" class="text-center py-4 text-muted">
+                  No check-ins recorded yet. Click <strong>Daily Check-in</strong> above to get started!
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Support & Privacy Action Panel -->
+  <div class="col-lg-4">
+    <!-- Campus Resources Card -->
+    <div class="card card-custom mb-4">
+      <div class="card-header card-header-clean">
+        <h6 class="fw-bold mb-0"><i class="bi bi-life-preserver text-danger me-2"></i>Campus Support Resources</h6>
+      </div>
+      <div class="card-body p-3">
+        <div class="d-flex align-items-start gap-2 mb-3">
+          <i class="bi bi-hospital fs-5 text-primary"></i>
+          <div>
+            <div class="fw-bold small">Campus Counseling Centre</div>
+            <div class="text-muted small">Free 1-on-1 confidential student appointments &bull; Mon-Fri, 9am - 5pm</div>
+          </div>
+        </div>
+        <div class="d-flex align-items-start gap-2 mb-3">
+          <i class="bi bi-telephone-fill fs-5 text-danger"></i>
+          <div>
+            <div class="fw-bold small">24/7 Helpline: 1800-CAMPUS-CARE</div>
+            <div class="text-muted small">Trained peer support & crisis response anytime</div>
+          </div>
+        </div>
+        <div class="d-flex align-items-start gap-2">
+          <i class="bi bi-chat-heart-fill fs-5 text-success"></i>
+          <div>
+            <div class="fw-bold small">Mindfulness Drop-in Session</div>
+            <div class="text-muted small">Wednesdays 4pm, Student Activity Hall Room B</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Data Privacy & Deletion Card -->
+    <div class="card card-custom">
+      <div class="card-header card-header-clean">
+        <h6 class="fw-bold mb-0"><i class="bi bi-shield-shaded text-secondary me-2"></i>Privacy Controls</h6>
+      </div>
+      <div class="card-body p-3">
+        <p class="small text-muted mb-3">
+          You retain complete ownership of your wellbeing data. You may withdraw consent or permanently erase your recorded check-ins at any time.
+        </p>
+        <div class="d-flex flex-column gap-2">
+          <a href="/student/consent" class="btn btn-sm btn-outline-secondary text-start">
+            <i class="bi bi-sliders me-1"></i> Manage Consent Preferences
+          </a>
+          <button type="button" class="btn btn-sm btn-outline-danger text-start" data-bs-toggle="modal" data-bs-target="#deleteDataModal">
+            <i class="bi bi-trash3 me-1"></i> Erase All My Wellbeing Records
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Delete Confirmation Modal -->
+<div class="modal fade" id="deleteDataModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title fw-bold text-danger"><i class="bi bi-exclamation-triangle-fill me-2"></i>Erase Wellbeing Records?</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+      <div class="modal-body small">
+        <p>This action will immediately and irreversibly delete all of your submitted daily check-in logs, assessments, and reset your baseline calculations.</p>
+        <p class="mb-0 text-muted">Your student user account will remain active, and you may begin new check-ins anytime.</p>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal">Cancel</button>
+        <form action="/student/delete-data" method="POST">
+          <button type="submit" class="btn btn-danger btn-sm">Yes, Permanently Delete My Data</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+const labels = {{ chart_labels | safe }};
+const sleepData = {{ chart_sleep | safe }};
+const activityData = {{ chart_activity | safe }};
+const moodData = {{ chart_mood | safe }};
+
+// Sleep Chart
+const ctxSleep = document.getElementById('sleepChart').getContext('2d');
+new Chart(ctxSleep, {
+  type: 'line',
+  data: {
+    labels: labels.length ? labels : ['No Data'],
+    datasets: [{
+      label: 'Sleep Duration (Hours)',
+      data: sleepData.length ? sleepData : [7],
+      borderColor: '#4f46e5',
+      backgroundColor: 'rgba(79, 70, 229, 0.1)',
+      borderWidth: 2.5,
+      tension: 0.3,
+      fill: true,
+      pointRadius: 4,
+      pointBackgroundColor: '#4f46e5'
+    }]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: { legend: { display: false } },
+    scales: {
+      y: { min: 0, max: 12, ticks: { stepSize: 2 } }
+    }
+  }
+});
+
+// Habits Chart
+const ctxHabits = document.getElementById('habitsChart').getContext('2d');
+new Chart(ctxHabits, {
+  type: 'line',
+  data: {
+    labels: labels.length ? labels : ['No Data'],
+    datasets: [
+      {
+        label: 'Activity (1-10)',
+        data: activityData.length ? activityData : [6],
+        borderColor: '#0ea5e9',
+        borderWidth: 2,
+        tension: 0.3,
+        pointRadius: 3
+      },
+      {
+        label: 'Mood (1-10)',
+        data: moodData.length ? moodData : [6],
+        borderColor: '#10b981',
+        borderWidth: 2,
+        borderDash: [5, 5],
+        tension: 0.3,
+        pointRadius: 3
+      }
+    ]
+  },
+  options: {
+    responsive: true,
+    maintainAspectRatio: false,
+    scales: {
+      y: { min: 1, max: 10, ticks: { stepSize: 2 } }
+    }
+  }
+});
+</script>
+{% endblock %}

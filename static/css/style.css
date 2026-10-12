@@ -1,0 +1,188 @@
+:root {
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --primary-light: #e0e7ff;
+  --secondary: #0ea5e9;
+  --success: #10b981;
+  --success-light: #d1fae5;
+  --warning: #f59e0b;
+  --warning-light: #fef3c7;
+  --danger: #ef4444;
+  --danger-light: #fee2e2;
+  --background: #f8fafc;
+  --surface: #ffffff;
+  --surface-border: #e2e8f0;
+  --text-main: #0f172a;
+  --text-muted: #64748b;
+  --radius-lg: 1rem;
+  --radius-md: 0.75rem;
+  --radius-sm: 0.5rem;
+  --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+  --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+  --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.08), 0 4px 6px -4px rgb(0 0 0 / 0.05);
+}
+
+body {
+  font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background-color: var(--background);
+  color: var(--text-main);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Navbar */
+.navbar-custom {
+  background: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid var(--surface-border);
+}
+
+.brand-badge {
+  background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+  color: white;
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--radius-sm);
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+
+/* Card Styling */
+.card-custom {
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+
+.card-custom:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.card-header-clean {
+  background: transparent;
+  border-bottom: 1px solid var(--surface-border);
+  padding: 1.25rem 1.5rem;
+}
+
+/* Stat Cards */
+.stat-widget {
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  background: var(--surface);
+  border: 1px solid var(--surface-border);
+  position: relative;
+  overflow: hidden;
+}
+
+.stat-widget::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.stat-primary::before { background: var(--primary); }
+.stat-success::before { background: var(--success); }
+.stat-warning::before { background: var(--warning); }
+.stat-danger::before { background: var(--danger); }
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 800;
+  letter-spacing: -0.025em;
+  color: var(--text-main);
+}
+
+.stat-label {
+  color: var(--text-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Status Badges */
+.badge-status {
+  padding: 0.4rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.025em;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.badge-status-stable {
+  background: var(--success-light);
+  color: #065f46;
+}
+
+.badge-status-preliminary {
+  background: #f1f5f9;
+  color: #475569;
+}
+
+.badge-status-review {
+  background: var(--warning-light);
+  color: #92400e;
+}
+
+.badge-status-elevated {
+  background: var(--danger-light);
+  color: #991b1b;
+}
+
+/* Buttons */
+.btn-primary-custom {
+  background: linear-gradient(135deg, #4f46e5, #4338ca);
+  color: white;
+  border: none;
+  font-weight: 600;
+  border-radius: var(--radius-md);
+  padding: 0.625rem 1.25rem;
+  transition: all 0.2s ease;
+}
+
+.btn-primary-custom:hover {
+  background: linear-gradient(135deg, #4338ca, #3730a3);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(79, 70, 229, 0.25);
+}
+
+/* Hotline alert banner */
+.hotline-banner {
+  background: #fef2f2;
+  border-left: 4px solid var(--danger);
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius-md);
+}
+
+/* Sliders */
+.form-range::-webkit-slider-thumb {
+  background: var(--primary);
+}
+
+/* Responsive Table */
+.table-custom {
+  margin-bottom: 0;
+}
+.table-custom th {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  color: var(--text-muted);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  border-top: none;
+  background: #f8fafc;
+}
+
+.table-custom td {
+  vertical-align: middle;
+  border-color: var(--surface-border);
+}

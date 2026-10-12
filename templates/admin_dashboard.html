@@ -1,0 +1,236 @@
+{% extends "base.html" %}
+
+{% block title %}Administrator Analytics - MindCare Campus{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <h2 class="fw-bold mb-1">Campus Administration & Analytics</h2>
+      <div class="text-muted small">
+        Privacy-preserving aggregate metrics &bull; Authorized Admin: {{ user.full_name }}
+      </div>
+    </div>
+    <div>
+      <span class="badge bg-primary-subtle text-primary border border-primary-subtle px-3 py-2">
+        <i class="bi bi-shield-lock-fill me-1"></i> Privacy Protected: k &ge; {{ metrics.k_suppression_threshold }} Suppression Active
+      </span>
+    </div>
+  </div>
+</div>
+
+{% if request.query_params.get('updated') %}
+  <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert">
+    <i class="bi bi-check-circle-fill fs-5"></i>
+    <div>
+      <strong>User status updated!</strong> The account state change has been applied and logged.
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<!-- Key Metrics Row -->
+<div class="row g-3 mb-4">
+  <div class="col-md-3">
+    <div class="stat-widget stat-primary">
+      <div class="stat-label">Registered Students</div>
+      <div class="stat-value text-primary">{{ metrics.total_students }}</div>
+      <div class="small text-muted mt-1">Campus participants</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-widget stat-success">
+      <div class="stat-label">Active Participants (30d)</div>
+      <div class="stat-value text-success">{{ metrics.active_students_30d }}</div>
+      <div class="small text-muted mt-1">{{ metrics.participation_rate_percent }}% participation rate</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-widget stat-info">
+      <div class="stat-label">Total Check-ins</div>
+      <div class="stat-value text-info">{{ metrics.total_checkins }}</div>
+      <div class="small text-muted mt-1">{{ metrics.recent_checkins_30d }} past 30 days</div>
+    </div>
+  </div>
+  <div class="col-md-3">
+    <div class="stat-widget stat-warning">
+      <div class="stat-label">Support Alerts</div>
+      <div class="stat-value text-warning">{{ metrics.alert_stats.total }}</div>
+      <div class="small text-muted mt-1">{{ metrics.alert_stats.active }} active &bull; {{ metrics.alert_stats.resolved }} resolved</div>
+    </div>
+  </div>
+</div>
+
+<!-- Indicator Distribution & ML Model Info -->
+<div class="row g-4 mb-4">
+  <div class="col-lg-6">
+    <div class="card card-custom h-100">
+      <div class="card-header card-header-clean d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-pie-chart-fill text-primary me-2"></i>Aggregate Signal Distribution</h6>
+        <span class="badge bg-light text-muted border">k-Anonymity Guarded</span>
+      </div>
+      <div class="card-body p-4">
+        <div class="alert alert-info py-2 px-3 small mb-3">
+          <i class="bi bi-info-circle-fill me-1"></i> Subgroups smaller than {{ metrics.k_suppression_threshold }} participants are automatically suppressed to protect student identities.
+        </div>
+        <div class="table-responsive">
+          <table class="table table-custom">
+            <thead>
+              <tr>
+                <th>Wellbeing Signal Category</th>
+                <th class="text-end">Aggregate Count</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for status, count in metrics.indicator_distribution.items() %}
+                <tr>
+                  <td class="fw-semibold">{{ status }}</td>
+                  <td class="text-end fw-bold">{{ count }}</td>
+                </tr>
+              {% else %}
+                <tr>
+                  <td colspan="2" class="text-center text-muted">No aggregate assessments generated yet.</td>
+                </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="col-lg-6">
+    <div class="card card-custom h-100">
+      <div class="card-header card-header-clean">
+        <h6 class="fw-bold mb-0"><i class="bi bi-cpu-fill text-success me-2"></i>Machine Learning Model Governance</h6>
+      </div>
+      <div class="card-body p-4">
+        <div class="mb-3">
+          <div class="small text-muted fw-bold">ACTIVE PIPELINE</div>
+          <div class="fw-bold">{{ metrics.model_metadata.model_type }} ({{ metrics.model_metadata.version }})</div>
+        </div>
+
+        <div class="row g-2 mb-3">
+          <div class="col-6">
+            <div class="p-2 border rounded bg-light">
+              <div class="small text-muted">Random Forest ROC-AUC</div>
+              <div class="fs-5 fw-bold text-success">{{ metrics.model_metadata.random_forest.roc_auc }}</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-2 border rounded bg-light">
+              <div class="small text-muted">Precision-Recall AUC</div>
+              <div class="fs-5 fw-bold text-success">{{ metrics.model_metadata.random_forest.pr_auc }}</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-2 border rounded bg-light">
+              <div class="small text-muted">Logistic Regression ROC-AUC</div>
+              <div class="fs-5 fw-bold text-primary">{{ metrics.model_metadata.logistic_regression.roc_auc }}</div>
+            </div>
+          </div>
+          <div class="col-6">
+            <div class="p-2 border rounded bg-light">
+              <div class="small text-muted">F1-Score (Distress Class)</div>
+              <div class="fs-5 fw-bold text-dark">{{ metrics.model_metadata.random_forest.f1_score }}</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="p-2 bg-light border rounded small text-muted">
+          <em>{{ metrics.model_metadata.disclaimer }}</em>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- User Management & Security Audit Logs -->
+<div class="row g-4">
+  <!-- User Management -->
+  <div class="col-lg-6">
+    <div class="card card-custom">
+      <div class="card-header card-header-clean d-flex justify-content-between align-items-center">
+        <h6 class="fw-bold mb-0"><i class="bi bi-people-fill text-primary me-2"></i>Campus Account Management</h6>
+        <span class="text-muted small">Total: {{ users|length }}</span>
+      </div>
+      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-custom table-hover">
+          <thead>
+            <tr>
+              <th>User Ref</th>
+              <th>Name & Email</th>
+              <th>Role</th>
+              <th>Status</th>
+              <th class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for u in users %}
+              <tr>
+                <td class="fw-bold small">{{ u.user_ref }}</td>
+                <td>
+                  <div class="fw-bold small">{{ u.full_name }}</div>
+                  <div class="text-muted small">{{ u.email }}</div>
+                </td>
+                <td><span class="badge bg-light text-dark border">{{ u.role }}</span></td>
+                <td>
+                  {% if u.is_active %}
+                    <span class="badge bg-success-subtle text-success">Active</span>
+                  {% else %}
+                    <span class="badge bg-danger-subtle text-danger">Disabled</span>
+                  {% endif %}
+                </td>
+                <td class="text-end">
+                  {% if u.id != user.id %}
+                    <form action="/admin/user/{{ u.id }}/toggle-status" method="POST" style="display:inline;">
+                      <button type="submit" class="btn btn-sm {% if u.is_active %}btn-outline-danger{% else %}btn-outline-success{% endif %}">
+                        {% if u.is_active %}Disable{% else %}Enable{% endif %}
+                      </button>
+                    </form>
+                  {% endif %}
+                </td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Security Audit Logs -->
+  <div class="col-lg-6">
+    <div class="card card-custom">
+      <div class="card-header card-header-clean">
+        <h6 class="fw-bold mb-0"><i class="bi bi-shield-check text-dark me-2"></i>Security Audit Events</h6>
+      </div>
+      <div class="table-responsive" style="max-height: 400px; overflow-y: auto;">
+        <table class="table table-custom table-hover">
+          <thead>
+            <tr>
+              <th>Timestamp</th>
+              <th>Role</th>
+              <th>Action</th>
+              <th>Resource</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for log in metrics.recent_audit_logs %}
+              <tr>
+                <td class="small text-muted">{{ log.timestamp }}</td>
+                <td><span class="badge bg-light text-dark border">{{ log.role }}</span></td>
+                <td class="small fw-semibold">{{ log.action }}</td>
+                <td class="small text-muted">{{ log.resource }}</td>
+              </tr>
+            {% else %}
+              <tr>
+                <td colspan="4" class="text-center text-muted py-3">No audit events recorded yet.</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}

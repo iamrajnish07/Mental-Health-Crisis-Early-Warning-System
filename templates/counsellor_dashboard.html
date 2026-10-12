@@ -1,0 +1,133 @@
+{% extends "base.html" %}
+
+{% block title %}Counsellor Review Queue - MindCare Campus{% endblock %}
+
+{% block content %}
+<div class="row g-4 mb-4">
+  <div class="col-12 d-flex flex-wrap justify-content-between align-items-center gap-3">
+    <div>
+      <h2 class="fw-bold mb-1">Counsellor Priority Review Queue</h2>
+      <div class="text-muted small">
+        Human-in-the-loop early warning triaging &bull; Authorized Staff: {{ user.full_name }}
+      </div>
+    </div>
+  </div>
+</div>
+
+{% if request.query_params.get('updated') %}
+  <div class="alert alert-success alert-dismissible fade show d-flex align-items-center gap-2 mb-4" role="alert">
+    <i class="bi bi-check-circle-fill fs-5"></i>
+    <div>
+      <strong>Case record updated!</strong> The student support action and status have been saved in the audit log.
+    </div>
+    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+  </div>
+{% endif %}
+
+<!-- Stats Cards -->
+<div class="row g-3 mb-4">
+  <div class="col-md-4">
+    <div class="stat-widget stat-danger">
+      <div class="stat-label">New Review Requests</div>
+      <div class="stat-value text-danger">{{ total_new }}</div>
+      <div class="small text-muted mt-1">Awaiting initial counsellor assessment</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-widget stat-warning">
+      <div class="stat-label">In-Progress Follow-ups</div>
+      <div class="stat-value text-warning">{{ total_pending }}</div>
+      <div class="small text-muted mt-1">Contact initiated or follow-up scheduled</div>
+    </div>
+  </div>
+  <div class="col-md-4">
+    <div class="stat-widget stat-success">
+      <div class="stat-label">Resolved / Supported</div>
+      <div class="stat-value text-success">{{ total_resolved }}</div>
+      <div class="small text-muted mt-1">Cases addressed and closed</div>
+    </div>
+  </div>
+</div>
+
+<!-- Filters & Case Queue Table -->
+<div class="card card-custom">
+  <div class="card-header card-header-clean d-flex flex-wrap justify-content-between align-items-center gap-2">
+    <h6 class="fw-bold mb-0"><i class="bi bi-inbox-fill text-primary me-2"></i>Assigned Review Cases</h6>
+
+    <!-- Filters -->
+    <form method="GET" action="/counsellor/dashboard" class="d-flex align-items-center gap-2">
+      <select name="status_filter" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="all" {% if current_status == 'all' %}selected{% endif %}>All Statuses</option>
+        <option value="New" {% if current_status == 'New' %}selected{% endif %}>New</option>
+        <option value="Pending Review" {% if current_status == 'Pending Review' %}selected{% endif %}>Pending Review</option>
+        <option value="Contact Initiated" {% if current_status == 'Contact Initiated' %}selected{% endif %}>Contact Initiated</option>
+        <option value="Follow-up Required" {% if current_status == 'Follow-up Required' %}selected{% endif %}>Follow-up Required</option>
+        <option value="Resolved" {% if current_status == 'Resolved' %}selected{% endif %}>Resolved</option>
+        <option value="Closed" {% if current_status == 'Closed' %}selected{% endif %}>Closed</option>
+      </select>
+
+      <select name="priority_filter" class="form-select form-select-sm" onchange="this.form.submit()">
+        <option value="all" {% if current_priority == 'all' %}selected{% endif %}>All Priorities</option>
+        <option value="High" {% if current_priority == 'High' %}selected{% endif %}>High Priority</option>
+        <option value="Medium" {% if current_priority == 'Medium' %}selected{% endif %}>Medium Priority</option>
+        <option value="Low" {% if current_priority == 'Low' %}selected{% endif %}>Low Priority</option>
+      </select>
+    </form>
+  </div>
+
+  <div class="table-responsive">
+    <table class="table table-custom table-hover">
+      <thead>
+        <tr>
+          <th>Alert ID</th>
+          <th>Student Ref</th>
+          <th>Department & Year</th>
+          <th>Priority</th>
+          <th>Trigger Reason</th>
+          <th>Status</th>
+          <th>Date</th>
+          <th class="text-end">Action</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for a in alerts %}
+          <tr>
+            <td class="fw-bold small text-primary">{{ a.alert_code }}</td>
+            <td>
+              <span class="badge bg-light text-dark border">{{ a.student_ref }}</span>
+            </td>
+            <td class="small">{{ a.department }} &bull; {{ a.academic_year }}</td>
+            <td>
+              {% if a.priority == 'High' %}
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle">High</span>
+              {% elif a.priority == 'Medium' %}
+                <span class="badge bg-warning-subtle text-warning-emphasis border border-warning-subtle">Medium</span>
+              {% else %}
+                <span class="badge bg-secondary-subtle text-secondary border">Low</span>
+              {% endif %}
+            </td>
+            <td class="small text-truncate" style="max-width: 280px;" title="{{ a.reason }}">
+              {{ a.reason }}
+            </td>
+            <td>
+              <span class="badge bg-light text-dark border">{{ a.status }}</span>
+            </td>
+            <td class="small text-muted">{{ a.created_at }}</td>
+            <td class="text-end">
+              <a href="/counsellor/alert/{{ a.id }}" class="btn btn-sm btn-outline-primary">
+                Review & Outreach &rarr;
+              </a>
+            </td>
+          </tr>
+        {% else %}
+          <tr>
+            <td colspan="8" class="text-center py-4 text-muted">
+              No alert cases match your current filter. The queue is clean!
+            </td>
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+{% endblock %}
